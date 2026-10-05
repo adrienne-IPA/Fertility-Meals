@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nutri-Sync Recipe Database</title>
+  <title>The Fertility Nutri-Sync™ Planner</title>
   <style>
 
 :root{
@@ -308,13 +308,123 @@ body::before {
   z-index: -1;
 }
 
+/* === v25: Desktop + mobile responsive layout === */
+input#q{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.95);
+  font: inherit;
+  font-weight:700;
+  color:#101828;
+}
+select#pattern, select#meal{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.95);
+  font: inherit;
+  font-weight:700;
+  color:#101828;
+}
+.actions{ display:flex; gap:10px; }
+.actions .btn{ flex:1; }
+.drop{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; }
+.drop .x{ flex:0 0 auto; border:none; background:transparent; font-size:18px; line-height:1; cursor:pointer; padding:4px 6px; color:#475467; }
+.hint-touch{ display:none; }
+
+/* Desktop: center content on wide screens */
+header > *, section.top, .planner-wrap{
+  max-width:1440px;
+  margin-left:auto;
+  margin-right:auto;
+}
+section.top, .planner-wrap{ width:100%; }
+@media (min-width: 981px){
+  section.top > .card:first-child{ position:sticky; top:96px; }
+}
+@media (min-width: 1500px){
+  .week{ grid-template-columns: repeat(7, minmax(0,1fr)); }
+}
+
+/* Modal panel */
+.modal-panel{ -webkit-overflow-scrolling: touch; }
+.add-to-plan{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  padding:12px; margin:0 0 16px 0;
+  border:1px solid var(--border); border-radius:14px; background: rgba(16,24,40,.03);
+}
+.add-to-plan .label{ margin:0; width:100%; }
+.add-to-plan select{ flex:1 1 110px; width:auto; padding:9px 10px; border-radius:12px; border:1px solid var(--border); background:#fff; font: inherit; font-weight:700; }
+.add-to-plan .btn{ flex:1 1 120px; }
+.add-msg{ width:100%; font-size:12px; font-weight:800; color:#027a48; min-height:1em; }
+
+/* Tablet */
+@media (max-width: 980px){
+  .recipes{ max-height: 60vh; }
+  body{ background-attachment: scroll; }
+}
+
+/* Phones and touch devices: tap instead of drag */
+@media (hover: none), (max-width: 640px){
+  .hint-drag{ display:none; }
+  .hint-touch{ display:inline; }
+}
+
+/* Phones */
+@media (max-width: 640px){
+  header{ padding:12px 14px 10px; }
+  header h1{ font-size:18px; }
+  header p{ font-size:12px; }
+  section.top{ padding:12px 12px 8px; gap:12px; }
+  .planner-wrap{ padding:8px 12px 20px; }
+  .card-body{ padding:12px 14px; }
+  .recipes{ grid-template-columns: 1fr; padding:12px; gap:10px; max-height:55vh; }
+  .recipe-row{ padding:12px; flex-direction:row; align-items:center; justify-content:space-between; }
+  .recipe-row .pill{ flex:0 0 auto; }
+
+  /* 16px inputs stop iOS from zooming in */
+  input#q, select, .select{ font-size:16px; }
+  .source-btn{ padding:10px 8px; }
+
+  .planner-card .card-head{ flex-direction:column; align-items:stretch; }
+  .planner-tools{ width:100%; }
+  .planner-tools .btn{ flex:1; }
+
+  /* Week scrolls sideways one day at a time */
+  .week{
+    display:flex;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    gap:10px;
+    padding:12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .day{ flex:0 0 85%; scroll-snap-align:start; }
+
+  .shopping{ padding:0 12px 12px; }
+
+  /* Recipe modal becomes a bottom sheet */
+  #recipeModal{ align-items:flex-end !important; }
+  #recipeModal .modal-panel{
+    width:100% !important;
+    max-width:100% !important;
+    max-height:90vh !important;
+    border-radius:18px 18px 0 0 !important;
+    padding:20px 16px 28px !important;
+  }
+  #recipeModal h2{ font-size:20px; padding-right:28px; }
+  .add-to-plan select{ font-size:16px; }
+}
+
 </style>
 </head>
 <body>
 
 <header>
   <h1>Nutri-Sync Recipe Database</h1>
-  <p>Pattern meal recipes → drag into your week → auto shopping list</p>
+  <p>Pattern meal recipes → add to your week → auto shopping list</p>
 </header>
 
 <section class="top">
@@ -398,10 +508,17 @@ body::before {
 </section>
 
 <div id="recipeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; z-index:9999;">
-  <div style="background:#fff; width:600px; max-width:90%; max-height:85%; overflow:auto; border-radius:18px; padding:24px; position:relative;">
+  <div class="modal-panel" style="background:#fff; width:600px; max-width:90%; max-height:85%; overflow:auto; border-radius:18px; padding:24px; position:relative;">
     <button id="closeModal" style="position:absolute; top:12px; right:16px; border:none; background:none; font-size:20px; cursor:pointer;">×</button>
     <h2 id="modalTitle" style="margin-top:0;"></h2>
     <div style="margin-bottom:16px; font-weight:600;">Serves: <span id="modalServes"></span></div>
+    <div class="add-to-plan">
+      <span class="label">Add to weekly planner</span>
+      <select id="addDay"></select>
+      <select id="addSlot"></select>
+      <button class="btn primary" id="addToPlan" type="button">Add</button>
+      <div class="add-msg" id="addMsg"></div>
+    </div>
     <h4>Ingredients</h4>
     <ul id="modalIngredients"></ul>
     <h4>Instructions</h4>
@@ -543,7 +660,7 @@ body::before {
 
         const lab = document.createElement("div");
         lab.className = "slot-label";
-        lab.innerHTML = `<span>${slot.label}</span><span class="mini">drag a recipe here</span>`;
+        lab.innerHTML = `<span>${slot.label}</span><span class="mini"><span class="hint-drag">drag a recipe here</span><span class="hint-touch">tap a recipe to add it</span></span>`;
 
         const drop = document.createElement("div");
         drop.className = "drop empty";
@@ -782,6 +899,34 @@ $("pattern").addEventListener("change", renderList);
       if(m && m.style.display === "flex"){ m.style.display = "none"; }
     }
   });
+
+
+  // v25: add to planner from the recipe popup (works on phones, where drag-and-drop does not)
+  let currentRecipeId = null;
+  (function initAddToPlan(){
+    const dSel = document.getElementById("addDay");
+    const sSel = document.getElementById("addSlot");
+    days.forEach(d=>{ const o=document.createElement("option"); o.value=d; o.textContent=d; dSel.appendChild(o); });
+    mealSlots.forEach(m=>{ const o=document.createElement("option"); o.value=m.key; o.textContent=m.label; sSel.appendChild(o); });
+    document.getElementById("addToPlan").addEventListener("click", function(){
+      if(!currentRecipeId) return;
+      const day = dSel.value, slot = sSel.value;
+      const target = document.querySelector('.drop[data-day="'+day+'"][data-slot="'+slot+'"]');
+      if(!target) return;
+      placeRecipe(target, currentRecipeId);
+      const lbl = (mealSlots.find(m=>m.key===slot)||{}).label || slot;
+      document.getElementById("addMsg").textContent = "Added to " + day + " " + lbl + ".";
+    });
+  })();
+  const _openModalOrig = openModal;
+  openModal = function(id){
+    currentRecipeId = id;
+    const r = RECIPES.find(x=>x.id===id);
+    const sSel = document.getElementById("addSlot");
+    if(r && mealSlots.some(m=>m.key===r.mealType)) sSel.value = r.mealType;
+    document.getElementById("addMsg").textContent = "";
+    _openModalOrig(id);
+  };
 
   buildWeek();
   renderList();
